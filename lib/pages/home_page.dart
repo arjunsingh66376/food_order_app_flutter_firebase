@@ -17,11 +17,15 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  late List<Food> _fullMenu;
+  late List<Food> _fullMenu = [];
   late Map<FoodCategory, List<Food>> _categorizedMenu = {};
+  List<Food> _searchResults = [];
+
   FoodCategory _selectedCategory = FoodCategory.burgers;
   final TextEditingController _searchController = TextEditingController();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  bool get _isSearching => _searchController.text.trim().isNotEmpty;
 
   @override
   void initState() {
@@ -48,35 +52,18 @@ class _HomePageState extends State<HomePage> {
 
   void _onSearchChanged() {
     final query = _searchController.text.trim().toLowerCase();
+
     if (query.isEmpty) {
-      // Reset to full categorized menu
-      setState(() {
-        _categorizedMenu = Provider.of<Restaurant>(
-          context,
-          listen: false,
-        ).categorizeFoodItems();
-      });
+      setState(() => _searchResults.clear());
       return;
     }
 
-    // Filter foods that match the search query
-    final filteredFoods = _fullMenu
-        .where(
-          (food) =>
-              food.name.toLowerCase().contains(query) ||
-              food.description.toLowerCase().contains(query),
-        )
-        .toList();
+    final filtered = _fullMenu.where((food) {
+      return food.name.toLowerCase().contains(query) ||
+          food.description.toLowerCase().contains(query);
+    }).toList();
 
-    // Rebuild categorized list
-    setState(() {
-      _categorizedMenu = {
-        for (var category in FoodCategory.values)
-          category: filteredFoods
-              .where((food) => food.category == category)
-              .toList(),
-      };
-    });
+    setState(() => _searchResults = filtered);
   }
 
   @override
@@ -166,14 +153,14 @@ class _HomePageState extends State<HomePage> {
         children: [
           CurrentLocation(),
           searchBar(),
-          categorySelector(),
+          if (!_isSearching) categorySelector(),
           Expanded(child: foodList()),
         ],
       ),
     );
   }
 
-  // 🔍 Search Bar Widget
+  // 🔍 Search Bar
   Widget searchBar() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
@@ -190,7 +177,7 @@ class _HomePageState extends State<HomePage> {
             Icons.search_sharp,
             color: Color.fromARGB(255, 102, 102, 102),
           ),
-          suffixIcon: _searchController.text.isNotEmpty
+          suffixIcon: _isSearching
               ? IconButton(
                   icon: const Icon(Icons.clear, color: Colors.black54),
                   onPressed: () {
@@ -216,7 +203,6 @@ class _HomePageState extends State<HomePage> {
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: FoodCategory.values.length,
-        clipBehavior: Clip.none,
         itemBuilder: (context, index) {
           FoodCategory category = FoodCategory.values[index];
           bool isSelected = _selectedCategory == category;
@@ -277,30 +263,57 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // 🧾 Food List (filtered by category + search)
+  // 🧾 Food List (search results or category view)
   Widget foodList() {
-    if (_categorizedMenu.isEmpty) {
+    if (_fullMenu.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
-    List<Food> foods = _categorizedMenu[_selectedCategory] ?? [];
+
+    // 🔍 If searching — show all matching results
+    if (_isSearching) {
+      if (_searchResults.isEmpty) {
+        return const Center(
+          child: Text(
+            "No matching foods found.",
+            style: TextStyle(color: Colors.black54, fontSize: 16),
+          ),
+        );
+      }
+      return ListView.builder(
+        itemCount: _searchResults.length,
+        itemBuilder: (context, index) {
+          final food = _searchResults[index];
+          return FoodTile(
+            food: food,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => FoodPage(food: food)),
+            ),
+          );
+        },
+      );
+    }
+
+    // 🍽 Normal category view
+    final foods = _categorizedMenu[_selectedCategory] ?? [];
     if (foods.isEmpty) {
       return const Center(
         child: Text(
-          "No food found.",
+          "No food found in this category.",
           style: TextStyle(color: Colors.black54, fontSize: 16),
         ),
       );
     }
+
     return ListView.builder(
       itemCount: foods.length,
       itemBuilder: (context, index) {
+        final food = foods[index];
         return FoodTile(
-          food: foods[index],
+          food: food,
           onTap: () => Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => FoodPage(food: foods[index]),
-            ),
+            MaterialPageRoute(builder: (context) => FoodPage(food: food)),
           ),
         );
       },
@@ -319,8 +332,6 @@ class _HomePageState extends State<HomePage> {
         return "Desserts.";
       case FoodCategory.drinks:
         return "Drinks.";
-      default:
-        return "Other.";
     }
   }
 }
