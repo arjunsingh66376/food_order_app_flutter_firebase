@@ -26,7 +26,15 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    _searchController.addListener(_onSearchChanged);
     _initializeMenu();
+  }
+
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _initializeMenu() async {
@@ -35,6 +43,39 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _fullMenu = restaurant.getFullMenu();
       _categorizedMenu = restaurant.categorizeFoodItems();
+    });
+  }
+
+  void _onSearchChanged() {
+    final query = _searchController.text.trim().toLowerCase();
+    if (query.isEmpty) {
+      // Reset to full categorized menu
+      setState(() {
+        _categorizedMenu = Provider.of<Restaurant>(
+          context,
+          listen: false,
+        ).categorizeFoodItems();
+      });
+      return;
+    }
+
+    // Filter foods that match the search query
+    final filteredFoods = _fullMenu
+        .where(
+          (food) =>
+              food.name.toLowerCase().contains(query) ||
+              food.description.toLowerCase().contains(query),
+        )
+        .toList();
+
+    // Rebuild categorized list
+    setState(() {
+      _categorizedMenu = {
+        for (var category in FoodCategory.values)
+          category: filteredFoods
+              .where((food) => food.category == category)
+              .toList(),
+      };
     });
   }
 
@@ -132,7 +173,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Container searchBar() {
+  // 🔍 Search Bar Widget
+  Widget searchBar() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -141,22 +183,32 @@ class _HomePageState extends State<HomePage> {
         borderRadius: BorderRadius.circular(30),
       ),
       child: TextField(
-        style: const TextStyle(color: Colors.black),
         controller: _searchController,
-        decoration: const InputDecoration(
-          prefixIcon: Icon(
+        style: const TextStyle(color: Colors.black),
+        decoration: InputDecoration(
+          prefixIcon: const Icon(
             Icons.search_sharp,
             color: Color.fromARGB(255, 102, 102, 102),
           ),
+          suffixIcon: _searchController.text.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.clear, color: Colors.black54),
+                  onPressed: () {
+                    _searchController.clear();
+                    FocusScope.of(context).unfocus();
+                  },
+                )
+              : null,
           hintText: "Search for foods...",
-          hintStyle: TextStyle(color: Colors.black),
+          hintStyle: const TextStyle(color: Colors.black54),
           border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(vertical: 15),
+          contentPadding: const EdgeInsets.symmetric(vertical: 15),
         ),
       ),
     );
   }
 
+  // 🍔 Category Selector
   Widget categorySelector() {
     return Container(
       height: 80,
@@ -225,11 +277,20 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // 🧾 Food List (filtered by category + search)
   Widget foodList() {
     if (_categorizedMenu.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
     List<Food> foods = _categorizedMenu[_selectedCategory] ?? [];
+    if (foods.isEmpty) {
+      return const Center(
+        child: Text(
+          "No food found.",
+          style: TextStyle(color: Colors.black54, fontSize: 16),
+        ),
+      );
+    }
     return ListView.builder(
       itemCount: foods.length,
       itemBuilder: (context, index) {
