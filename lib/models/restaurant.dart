@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:food_order_app_flutter_firebase/models/cart_item.dart';
 import 'package:food_order_app_flutter_firebase/models/food.dart';
 import 'package:food_order_app_flutter_firebase/services/database/food_services.dart';
-
 import 'package:intl/intl.dart';
 
 class Restaurant extends ChangeNotifier {

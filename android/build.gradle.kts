@@ -1,11 +1,5 @@
 
 
-plugins {
-    // Keep your existing plugins (if any)
-
-    // Add this line for Firebase
-    id("com.google.gms.google-services") version "4.4.4" apply false
-}
 
 
 
