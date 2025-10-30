@@ -1,6 +1,8 @@
+import 'package:flutter/material.dart';
+
 enum FoodCategory { burgers, salads, sides, desserts, drinks }
 
-FoodCategory stringToFoodCategory(String category) {
+FoodCategory stringToFoodCategory(String? category) {
   switch (category) {
     case 'burgers':
       return FoodCategory.burgers;
@@ -13,7 +15,8 @@ FoodCategory stringToFoodCategory(String category) {
     case 'drinks':
       return FoodCategory.drinks;
     default:
-      throw ArgumentError('Unknown food category: $category');
+      debugPrint("⚠️ Unknown food category: $category, defaulting to burgers");
+      return FoodCategory.burgers;
   }
 }
 
@@ -34,10 +37,10 @@ class Food {
 
   factory Food.fromMap(Map<String, dynamic> data) {
     return Food(
-      name: data['name'],
-      description: data['description'],
-      imagePath: data['imagePath'],
-      price: data['price'] ?? 0.0,
+      name: data['name'] ?? '',
+      description: data['description'] ?? '',
+      imagePath: data['imagePath'] ?? '',
+      price: (data['price'] as num).toDouble(),
       category: stringToFoodCategory(data['category']),
     );
   }

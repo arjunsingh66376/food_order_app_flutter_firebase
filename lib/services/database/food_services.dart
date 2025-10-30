@@ -5,10 +5,28 @@ class FoodService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   Future<List<Food>> fetchFoodMenu() async {
-    final QuerySnapshot snapshot = await _firestore.collection('foods').get();
-    return snapshot.docs.map((doc) {
-      final data = doc.data() as Map<String, dynamic>;
-      return Food.fromMap(data);
-    }).toList();
+    try {
+      final QuerySnapshot snapshot = await _firestore.collection('foods').get();
+
+      return snapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+
+        // Defensive checks for missing fields
+        return Food(
+          name: data['name'] ?? 'Unnamed Food',
+          description: data['description'] ?? 'No description',
+          imagePath: data['imagePath'] ?? '',
+          price: (data['price'] is int)
+              ? (data['price'] as int).toDouble()
+              : (data['price'] ?? 0.0),
+          category: stringToFoodCategory(
+            (data['category'] ?? 'burgers').toString().toLowerCase(),
+          ),
+        );
+      }).toList();
+    } catch (e) {
+      print('Error fetching food menu: $e');
+      rethrow;
+    }
   }
 }

@@ -226,6 +226,9 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget foodList() {
+    if (_categorizedMenu.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
     List<Food> foods = _categorizedMenu[_selectedCategory] ?? [];
     return ListView.builder(
       itemCount: foods.length,

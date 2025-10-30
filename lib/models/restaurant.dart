@@ -14,11 +14,24 @@ class Restaurant extends ChangeNotifier {
   List<CartItem> get cart => _cart;
   String get deliveryAddress => _deliveryAddress;
 
+  // ✅ used by homepage -> initializeMenu()
+  Future<void> initializeMenu() async {
+    await fetchAndStoreFoodMenu();
+  }
+
+  // ✅ used by homepage -> getFullMenu()
+  List<Food> getFullMenu() {
+    return _menu;
+  }
+
   Future<void> fetchAndStoreFoodMenu() async {
-    final FoodService foodService = FoodService();
-    List<Food> fetchedMenu = await foodService.fetchFoodMenu();
-    _menu = fetchedMenu;
-    notifyListeners();
+    try {
+      final foodService = FoodService();
+      _menu = await foodService.fetchFoodMenu();
+      notifyListeners();
+    } catch (e) {
+      debugPrint("Error fetching menu: $e");
+    }
   }
 
   void updateDeliveryAddress(String newAddress) {
@@ -27,8 +40,7 @@ class Restaurant extends ChangeNotifier {
   }
 
   void addToCart(Food food) {
-    CartItem? cartItem = _cart.firstWhereOrNull((item) => item.food == food);
-
+    final cartItem = _cart.firstWhereOrNull((item) => item.food == food);
     if (cartItem != null) {
       cartItem.quantity++;
     } else {
@@ -38,36 +50,21 @@ class Restaurant extends ChangeNotifier {
   }
 
   void removeFromCart(CartItem cartItem) {
-    int cartIndex = _cart.indexOf(cartItem);
-
-    if (cartIndex != -1) {
-      if (_cart[cartIndex].quantity > 1) {
-        _cart[cartIndex].quantity--;
+    final index = _cart.indexOf(cartItem);
+    if (index != -1) {
+      if (_cart[index].quantity > 1) {
+        _cart[index].quantity--;
       } else {
-        _cart.removeAt(cartIndex);
+        _cart.removeAt(index);
       }
+      notifyListeners();
     }
-    notifyListeners();
   }
 
-  double getTotalPrice() {
-    double total = 0.0;
+  double getTotalPrice() =>
+      _cart.fold(0.0, (sum, item) => sum + item.food.price * item.quantity);
 
-    for (CartItem cartItem in _cart) {
-      total += cartItem.food.price * cartItem.quantity;
-    }
-    return total;
-  }
-
-  int getTotalItemCount() {
-    int totalItemCount = 0;
-
-    for (CartItem cartItem in _cart) {
-      totalItemCount += cartItem.quantity;
-    }
-
-    return totalItemCount;
-  }
+  int getTotalItemCount() => _cart.fold(0, (sum, item) => sum + item.quantity);
 
   void clearCart() {
     _cart.clear();
@@ -75,53 +72,33 @@ class Restaurant extends ChangeNotifier {
   }
 
   String displayCartReceipt() {
-    final receipt = StringBuffer();
-    receipt.writeln("Here's your receipt");
-    receipt.writeln("---------------------------------------");
-    receipt.writeln();
+    final buffer = StringBuffer()
+      ..writeln("Here's your receipt")
+      ..writeln("---------------------------------------")
+      ..writeln(DateFormat('yyyy-MM-dd').format(DateTime.now()))
+      ..writeln("---------------------------------------");
 
-    String formattedDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
-    receipt.writeln(formattedDate);
-
-    receipt.writeln();
-    receipt.writeln("---------------------------------------");
-
-    for (final cartItem in _cart) {
-      receipt.writeln(
-        "${cartItem.food.name} - ${_formatPrice(cartItem.food.price)}",
+    for (final item in _cart) {
+      buffer.writeln(
+        "${item.food.name} x${item.quantity} - ${_formatPrice(item.totalPrice)}",
       );
-      receipt.writeln();
     }
 
-    receipt.writeln("---------------------------------------");
-    receipt.writeln();
-    receipt.writeln('Total Items: ${getTotalItemCount()}');
-    receipt.writeln('Total price: ${_formatPrice(getTotalPrice())}');
+    buffer
+      ..writeln("---------------------------------------")
+      ..writeln('Total Items: ${getTotalItemCount()}')
+      ..writeln('Total: ${_formatPrice(getTotalPrice())}')
+      ..writeln("Deliver to: $deliveryAddress");
 
-    receipt.writeln("Deliver to: $deliveryAddress");
-
-    return receipt.toString();
+    return buffer.toString();
   }
 
-  String _formatPrice(double price) {
-    return "\$${price.toStringAsFixed(2)}";
-  }
-
-  Future<void> initializeMenu() async {
-    await fetchAndStoreFoodMenu();
-  }
-
-  List<Food> getFullMenu() {
-    return _menu;
-  }
+  String _formatPrice(double price) => "₹${price.toStringAsFixed(2)}";
 
   Map<FoodCategory, List<Food>> categorizeFoodItems() {
-    Map<FoodCategory, List<Food>> categorizedFood = {};
-    for (FoodCategory category in FoodCategory.values) {
-      categorizedFood[category] = _menu
-          .where((food) => food.category == category)
-          .toList();
-    }
-    return categorizedFood;
+    return {
+      for (var category in FoodCategory.values)
+        category: _menu.where((f) => f.category == category).toList(),
+    };
   }
 }
