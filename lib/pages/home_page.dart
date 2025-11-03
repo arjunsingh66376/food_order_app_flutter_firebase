@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:food_order_app_flutter_firebase/components/current_location.dart';
 import 'package:food_order_app_flutter_firebase/components/food_tile.dart';
 import 'package:food_order_app_flutter_firebase/components/nav_bar_menu_button.dart';
+import 'package:food_order_app_flutter_firebase/constants/style.dart';
 import 'package:food_order_app_flutter_firebase/models/food.dart';
 import 'package:food_order_app_flutter_firebase/models/restaurant.dart';
 import 'package:food_order_app_flutter_firebase/pages/cart_page.dart';
@@ -88,8 +89,8 @@ class _HomePageState extends State<HomePage> {
                     return Stack(
                       children: [
                         Container(
-                          decoration: const BoxDecoration(
-                            color: Colors.limeAccent,
+                          decoration: BoxDecoration(
+                            color: mainYellow,
                             shape: BoxShape.circle,
                           ),
                           child: IconButton(
@@ -132,8 +133,8 @@ class _HomePageState extends State<HomePage> {
                 ),
                 const SizedBox(width: 5),
                 Container(
-                  decoration: const BoxDecoration(
-                    color: Colors.limeAccent,
+                  decoration: BoxDecoration(
+                    color: mainYellow,
                     shape: BoxShape.circle,
                   ),
                   child: IconButton(
@@ -217,7 +218,7 @@ class _HomePageState extends State<HomePage> {
               margin: const EdgeInsets.symmetric(horizontal: 5),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? Colors.limeAccent
+                    ? mainYellow
                     : const Color.fromARGB(255, 255, 255, 255),
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [

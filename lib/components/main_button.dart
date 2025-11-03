@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
 class MainButton extends StatelessWidget {
-  final Function() onTap;
+  final VoidCallback? onTap; // ✅ Nullable callback
   final String text;
   final Color? color;
 
   const MainButton({
     super.key,
-    required this.onTap,
     required this.text,
+    this.onTap, // ✅ Optional now
     this.color,
   });
 
