@@ -19,15 +19,16 @@ class _RegisterState extends State<Register> {
       TextEditingController();
 
   void register() async {
-    final _authService = AuthService();
+    final authService = AuthService();
 
     if (passwordController.text == confirmPasswordController.text) {
       try {
-        await _authService.signUpWithEmailPassword(
+        await authService.signUpWithEmailPassword(
           emailController.text,
           passwordController.text,
         );
       } catch (e) {
+        if (!mounted) return;
         showDialog(
           context: context,
           builder: (context) => AlertDialog(

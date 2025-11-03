@@ -25,7 +25,6 @@ class FoodService {
         );
       }).toList();
     } catch (e) {
-      print('Error fetching food menu: $e');
       rethrow;
     }
   }

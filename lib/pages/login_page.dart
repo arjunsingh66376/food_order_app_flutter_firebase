@@ -56,8 +56,9 @@ class _LoginPageState extends State<LoginPage> {
       if (!mounted) return;
       showErrorDialog(e.toString());
     } finally {
-      if (!mounted) return;
-      setState(() => _isLoading = false);
+      if (!mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -69,8 +70,9 @@ class _LoginPageState extends State<LoginPage> {
       if (!mounted) return; // <— Add this guard before using context
       showErrorDialog("Google Sign-In failed: $e");
     } finally {
-      if (!mounted) return; // <— Add this guard before setState
-      setState(() => _isLoading = false);
+      if (!mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -153,7 +155,7 @@ class _LoginPageState extends State<LoginPage> {
         // ✅ Fullscreen Loading Overlay
         if (_isLoading)
           Container(
-            color: Colors.black.withOpacity(0.4),
+            color: Colors.black.withValues(alpha: 0.4),
             child: const Center(
               child: CircularProgressIndicator(
                 color: Colors.white,
